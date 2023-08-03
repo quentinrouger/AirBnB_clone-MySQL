@@ -1,9 +1,8 @@
-#!/usr/bin/python3
 """
+File to manage the database
 This script defines the DBStorage engine class.
 """
-
-import json
+import os
 from os import getenv
 from models.base_model import Base, BaseModel
 from models.amenity import Amenity
@@ -13,14 +12,12 @@ from models.review import Review
 from models.state import State
 from models.user import User
 from sqlalchemy import create_engine
-from sqlalchemy.orm import relationship, scoped_session, sessionmaker
-
+from sqlalchemy.orm import sessionmaker, scoped_session
 
 
 class DBStorage:
     """
     Represents a database storage engine.
-
     Attributes:
         __engine (sqlalchemy.Engine): The SQLAlchemy engine.
         __session (sqlalchemy.Session): The SQLAlchemy session.
@@ -30,44 +27,47 @@ class DBStorage:
     __session = None
 
     def __init__(self):
-        """
-        Initializes a new DBStorage instance.
-        """
-        self.__engine = create_engine(
-            "mysql+mysqldb://{}:{}@{}/{}".
-            format(getenv("HBNB_MYSQL_USER"),
-                   getenv("HBNB_MYSQL_PWD"),
-                   getenv("HBNB_MYSQL_HOST"),
-                   getenv("HBNB_MYSQL_DB")),
-            pool_pre_ping=True
-        )
+        """Create a new instance of DBStorage"""
+        # MySQL user, password, host, and database from environment variables
+        user = os.environ.get('HBNB_MYSQL_USER')
+        pwd = os.environ.get('HBNB_MYSQL_PWD')
+        host = os.environ.get('HBNB_MYSQL_HOST', 'localhost')
+        db_name = os.environ.get('HBNB_MYSQL_DB')
+
+        # Construct the database URI
+        db_uri = 'mysql+mysqldb://{}:{}@{}:3306/{}'.format(user, pwd, host, db_name)
+
+        self.__engine = create_engine(db_uri, pool_pre_ping=True)
+
         if getenv("HBNB_ENV") == "test":
             Base.metadata.drop_all(self.__engine)
+
+        Base.metadata.create_all(self.__engine)
+
+        session_factory = sessionmaker(bind=self.__engine, expire_on_commit=False)
+        self.__session = scoped_session(session_factory)
 
     def all(self, cls=None):
         """
         Queries the current database session
         for all objects of the given class.
-
-        If cls is None, queries all types of objects.
-
-        Return:
-            A dictionary of queried classes
-            in the format <class name>.<obj id> = obj.
         """
-        if cls is None:
-            objs = (self.__session.query(State).all() +
-                    self.__session.query(City).all() +
-                    self.__session.query(User).all() +
-                    self.__session.query(Place).all() +
-                    self.__session.query(Review).all() +
-                    self.__session.query(Amenity).all())
-        else:
-            if isinstance(cls, str):
-                cls = eval(cls)
-            objs = self.__session.query(cls).all()
+        result = {}
+        classes = [State, City, User, Place, Review, Amenity]
 
-        return {"{}.{}".format(type(o).__name__, o.id): o for o in objs}
+        if cls is None:
+            for c in classes:
+                query_result = self.__session.query(c).all()
+                for obj in query_result:
+                    key = "{}.{}".format(type(obj).__name__, obj.id)
+                    result[key] = obj
+        else:
+            query_result = self.__session.query(cls).all()
+            for obj in query_result:
+                key = "{}.{}".format(type(obj).__name__, obj.id)
+                result[key] = obj
+
+        return result
 
     def new(self, obj):
         """
@@ -90,25 +90,14 @@ class DBStorage:
 
     def reload(self):
         """
-        Deserialize the JSON file __file_path to __objects, if it exists.
+        Creates all tables in the database and initializes a new session.
         """
-        try:
-            with open(self.__file_path, "r", encoding="utf-8") as file:
-                try:
-                    loaded_objects = json.load(file)
-                    for key, value in loaded_objects.items():
-                        class_name = value["__class__"]
-                        del value["__class__"]
-                        self.new(eval(class_name)(**value))
-                except json.JSONDecodeError:
-                    # JSON file is empty or corrupted
-                    pass
-        except FileNotFoundError:
-            pass
-
+        self.__session.close()
+        self.__session = scoped_session(sessionmaker(bind=self.__engine,
+                                                     expire_on_commit=False))
 
     def close(self):
         """
         Closes the working SQLAlchemy session.
         """
-        self.__session.close()
+        self.__session.remove()

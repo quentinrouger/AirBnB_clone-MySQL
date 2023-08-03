@@ -21,10 +21,9 @@ association_table = Table("place_amenity", Base.metadata,
 
 
 class Place(BaseModel, Base):
-    """
-    Represents a Place for a MySQL database.
+    """Represents a Place for a MySQL database.
 
-    Inherits from SQLAlchemy Base and links to the MySQL table 'places'.
+    Inherits from SQLAlchemy Base and links to the MySQL table places.
 
     Attributes:
         __tablename__ (str): The name of the MySQL table to store places.
@@ -41,11 +40,6 @@ class Place(BaseModel, Base):
         reviews (sqlalchemy relationship): The Place-Review relationship.
         amenities (sqlalchemy relationship): The Place-Amenity relationship.
         amenity_ids (list): An id list of all linked amenities.
-
-        -> If 'HBNB_TYPE_STORAGE' is not set to 'db',
-        additional properties and setter methods
-           are defined for amenities and reviews
-           to handle the relationships manually.
     """
     __tablename__ = "places"
     city_id = Column(String(60), ForeignKey("cities.id"), nullable=False)
@@ -60,18 +54,13 @@ class Place(BaseModel, Base):
     longitude = Column(Float)
     reviews = relationship("Review", backref="place", cascade="delete")
     amenities = relationship("Amenity", secondary="place_amenity",
-                              viewonly=False)
+                             viewonly=False, overlaps="place_amenities")
     amenity_ids = []
 
-    if getenv("HBNB_TYPE_STORAGE") != "db":
+    if getenv("HBNB_TYPE_STORAGE", None) != "db":
         @property
         def reviews(self):
-            """
-            Get a list of all linked Reviews.
-
-             This property is created for compatibility
-            when 'HBNB_TYPE_STORAGE' is not 'db'.
-            """
+            """Get a list of all linked Reviews."""
             review_list = []
             for review in list(models.storage.all(Review).values()):
                 if review.place_id == self.id:
@@ -80,12 +69,7 @@ class Place(BaseModel, Base):
 
         @property
         def amenities(self):
-            """
-            Get/set linked Amenities.
-
-            This property is created for compatibility
-            when 'HBNB_TYPE_STORAGE' is not 'db'.
-            """
+            """Get/set linked Amenities."""
             amenity_list = []
             for amenity in list(models.storage.all(Amenity).values()):
                 if amenity.id in self.amenity_ids:
@@ -94,11 +78,5 @@ class Place(BaseModel, Base):
 
         @amenities.setter
         def amenities(self, value):
-            """
-            Set the linked Amenities.
-
-            This setter is created for compatibility
-            when 'HBNB_TYPE_STORAGE' is not 'db'.
-            """
-            if isinstance(value, Amenity):
+            if type(value) == Amenity:
                 self.amenity_ids.append(value.id)
