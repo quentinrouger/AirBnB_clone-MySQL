@@ -2,6 +2,8 @@
 """
 This script defines the DBStorage engine class.
 """
+
+import json
 from os import getenv
 from models.base_model import Base, BaseModel
 from models.amenity import Amenity
@@ -12,6 +14,7 @@ from models.state import State
 from models.user import User
 from sqlalchemy import create_engine
 from sqlalchemy.orm import relationship, scoped_session, sessionmaker
+
 
 
 class DBStorage:
@@ -87,13 +90,22 @@ class DBStorage:
 
     def reload(self):
         """
-        Creates all tables in the database and initializes a new session.
+        Deserialize the JSON file __file_path to __objects, if it exists.
         """
-        Base.metadata.create_all(self.__engine)
-        session_factory = sessionmaker(bind=self.__engine,
-                                       expire_on_commit=False)
-        Session = scoped_session(session_factory)
-        self.__session = Session()
+        try:
+            with open(self.__file_path, "r", encoding="utf-8") as file:
+                try:
+                    loaded_objects = json.load(file)
+                    for key, value in loaded_objects.items():
+                        class_name = value["__class__"]
+                        del value["__class__"]
+                        self.new(eval(class_name)(**value))
+                except json.JSONDecodeError:
+                    # JSON file is empty or corrupted
+                    pass
+        except FileNotFoundError:
+            pass
+
 
     def close(self):
         """

@@ -2,9 +2,9 @@
 """
 This script defines the FileStorage class, an abstracted storage engine.
 """
+import os
 import json
-from models.base_model import BaseModel, Amenity, City
-from models.base_model import  Place, Review, State, User
+
 
 
 class FileStorage:
@@ -18,6 +18,10 @@ class FileStorage:
 
     __file_path = "file.json"
     __objects = {}
+
+    # Remove existing 'file.json' if it exists
+    if os.path.exists(__file_path):
+        os.remove(__file_path)
 
     def all(self, cls=None):
         """
@@ -46,8 +50,8 @@ class FileStorage:
         """
         Serialize __objects to the JSON file __file_path.
         """
-        serialized_objects = {key: value.to_dict()
-                              for key, value in self.__objects.items()}
+        serialized_objects = {key: value.to_dict() for key,
+                              value in self.__objects.items()}
         with open(self.__file_path, "w", encoding="utf-8") as file:
             json.dump(serialized_objects, file)
 
@@ -57,11 +61,15 @@ class FileStorage:
         """
         try:
             with open(self.__file_path, "r", encoding="utf-8") as file:
-                loaded_objects = json.load(file)
-                for key, value in loaded_objects.items():
-                    class_name = value["__class__"]
-                    del value["__class__"]
-                    self.new(eval(class_name)(**value))
+                try:
+                    loaded_objects = json.load(file)
+                    for key, value in loaded_objects.items():
+                        class_name = value["__class__"]
+                        del value["__class__"]
+                        self.new(eval(class_name)(**value))
+                except json.JSONDecodeError:
+                    # JSON file is empty or corrupted
+                    pass
         except FileNotFoundError:
             pass
 
@@ -78,3 +86,5 @@ class FileStorage:
         Call the reload method.
         """
         self.reload()
+
+
