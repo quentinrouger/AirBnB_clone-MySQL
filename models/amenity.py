@@ -1,6 +1,7 @@
 #!/usr/bin/python3
 """
-This script defines the Amenity class, representing an Amenity for a MySQL database.
+This script defines the Amenity class, representing an Amenity
+for a MySQL database.
 
 Inherits from SQLAlchemy Base and links to the MySQL table 'amenities'.
 

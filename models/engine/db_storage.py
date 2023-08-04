@@ -1,3 +1,5 @@
+#!/usr/bin/python3
+
 """
 File to manage the database
 This script defines the DBStorage engine class.
@@ -35,7 +37,10 @@ class DBStorage:
         db_name = os.environ.get('HBNB_MYSQL_DB')
 
         # Construct the database URI
-        db_uri = 'mysql+mysqldb://{}:{}@{}:3306/{}'.format(user, pwd, host, db_name)
+        db_uri = 'mysql+mysqldb://{}:{}@{}:3306/{}'.format(user,
+                                                           pwd,
+                                                           host,
+                                                           db_name)
 
         self.__engine = create_engine(db_uri, pool_pre_ping=True)
 
@@ -44,7 +49,8 @@ class DBStorage:
 
         Base.metadata.create_all(self.__engine)
 
-        session_factory = sessionmaker(bind=self.__engine, expire_on_commit=False)
+        session_factory = sessionmaker(bind=self.__engine,
+                                       expire_on_commit=False)
         self.__session = scoped_session(session_factory)
 
     def all(self, cls=None):

@@ -1,6 +1,7 @@
 #!/usr/bin/python3
+
 """
-This script defines the BaseModel class, representing the base model 
+This script defines the BaseModel class, representing the base model
 for all other classes.
 """
 import models

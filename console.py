@@ -223,13 +223,13 @@ class HBNBCommand(cmd.Cmd):
 
         Usage: all <class name> or all
         """
+        command: HBNBCommand.classes
         if not arg:
             print([str(v) for v in storage.all().values()])
-        elif arg in HBNBCommand.classes:
-            print([str(v) for v in storage.all(HBNBCommand.classes[arg]).values()])
+        elif arg in command:
+            print([str(v) for v in storage.all(command[arg]).values()])
         else:
             print("** class doesn't exist **")
-
 
     def help_all(self):
         """ Help information for the all command """
