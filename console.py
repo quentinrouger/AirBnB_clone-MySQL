@@ -223,7 +223,7 @@ class HBNBCommand(cmd.Cmd):
 
         Usage: all <class name> or all
         """
-        command: HBNBCommand.classes
+        command = HBNBCommand.classes
         if not arg:
             print([str(v) for v in storage.all().values()])
         elif arg in command:
