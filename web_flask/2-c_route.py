@@ -17,5 +17,11 @@ def hello_hbnb():
 def hbnb():
     return "HBNB"
 
+
+@blog_app.route('/c/<text>', strict_slashes=False)
+def c_route(text):
+    text = text.replace("_", " ")
+    return "C " + text
+
 if __name__ == "__main__":
     blog_app.run(host='0.0.0.0', port='5000')
