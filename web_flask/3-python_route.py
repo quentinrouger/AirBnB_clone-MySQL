@@ -24,8 +24,9 @@ def c_route(text):
     return "C " + text
 
 
-@blog_app.route('/python/<text>', strict_slashes=False)
-def python_route(text):
+@blog_app.route("/python/", strict_slashes=False)
+@blog_app.route("/python/<text>", strict_slashes=False)
+def python_text(text="is cool"):
     text = text.replace("_", " ")
     return "Python " + text
 
